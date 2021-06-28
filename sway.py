@@ -22,7 +22,7 @@ def sway(pop, split, better, terminate):
         return cluster(selected, t)
     
     return cluster(pop, terminate)
-       
+
 
 ### function to excute SWAY, and define the support function in SWAY
 def sway_runner(table):
@@ -51,15 +51,15 @@ def sway_runner(table):
             d = (a**2 + c**2 - b**2) / (2*c)    # cosine rule
             mappings.append((item, d))
         
-        mappings = sorted(mappings, key=lambda x: x[1])
+        mappings = sorted(mappings, key=lambda x: x[1], reverse=True)
         mappings = [i[0] for i in mappings]
 
         # assign each point to east or west
         n = len(mappings)
-        eastItems = mappings[:int(n*0.2)] + mappings[int(n*0.5):int(n*0.8)]
-        westItems = mappings[int(n*0.2):int(n*0.5)] + mappings[int(n*0.8):]
-        # eastItems = mappings[:int(n*0.5)]
-        # westItems = mappings[int(n*0.5):]
+        # eastItems = mappings[:int(n*0.2)] + mappings[int(n*0.5):int(n*0.8)]
+        # westItems = mappings[int(n*0.2):int(n*0.5)] + mappings[int(n*0.8):]
+        eastItems = mappings[:int(n*0.5)]
+        westItems = mappings[int(n*0.5):]
 
         return west, east, westItems, eastItems
     
@@ -73,14 +73,37 @@ def sway_runner(table):
             
             return True
 
+    def _loss(ind1, ind2):
+        return sum(math.exp(i - j) for i, j in zip(ind1, ind2)) / len(ind1)
+
+    def con_domination(ind1, ind2):
+        # because minimize all goals, less is True, more is False
+        s1, s2, n = 0, 0, len(ind1)
+
+        for idx, item in enumerate(ind1):
+            if idx == 0:
+                w = -1
+            else:
+                w = 1
+            
+            a = ind1[idx]
+            b = ind2[idx]
+            s1 -= math.e**(w * (a - b) / n)
+            s2 -= math.e**(w * (b - a) / n)
+        
+        return s1 / n < s2 / n
+
     def _better(part1, part2):
-        return bin_domination(part1, part2)
+        # part 1 dominate part 2? True for yes, False for no
+
+        # return bin_domination(part1[1], part2[1])
+        return con_domination(part1[1], part2[1])
 
     # todo: con_domination
     
     # the execution of SWAY
-    # terminate = math.sqrt(len(table))
-    terminate = 100
+    terminate = math.sqrt(len(table))
+    # terminate = 100
     res = sway(table, _split, _better, terminate)
 
     return res
